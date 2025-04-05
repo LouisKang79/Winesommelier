@@ -3,12 +3,13 @@ from openai import OpenAI
 
 # 세션 상태 초기화 (필요한 변수들 설정)
 if "stage" not in st.session_state:
-    st.session_state.stage = "api_key"  # 단계: api_key, question_1, question_2, question_3, recommendation
+    st.session_state.stage = "api_key"  # 단계: api_key, question_1, question_2, question_3, question_4, recommendation
 if "wine_preferences" not in st.session_state:
     st.session_state.wine_preferences = {
         "food": "",
         "style": "",
-        "budget": ""
+        "budget": "",
+        "location": ""  # 판매점 정보를 위한 위치 추가
     }
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -27,7 +28,7 @@ if st.session_state.stage == "api_key":
     else:
         st.session_state.openai_api_key = openai_api_key
         st.session_state.stage = "question_1"
-        st.rerun()  # experimental_rerun() -> rerun()으로 변경
+        st.rerun()
 
 # 음식 선택 단계
 elif st.session_state.stage == "question_1":
@@ -55,7 +56,7 @@ elif st.session_state.stage == "question_1":
     
     if st.button("다음 단계로", key="next_1"):
         st.session_state.stage = "question_2"
-        st.rerun()  # experimental_rerun() -> rerun()으로 변경
+        st.rerun()
 
 # 와인 스타일 선택 단계
 elif st.session_state.stage == "question_2":
@@ -77,7 +78,7 @@ elif st.session_state.stage == "question_2":
     
     if st.button("다음 단계로", key="next_2"):
         st.session_state.stage = "question_3"
-        st.rerun()  # experimental_rerun() -> rerun()으로 변경
+        st.rerun()
 
 # 예산 선택 단계
 elif st.session_state.stage == "question_3":
@@ -94,6 +95,30 @@ elif st.session_state.stage == "question_3":
     budget_choice = st.radio("예산 선택", budget_options, index=1)
     st.session_state.wine_preferences["budget"] = budget_choice
     
+    if st.button("다음 단계로", key="next_3"):
+        st.session_state.stage = "question_4"
+        st.rerun()
+
+# 지역 선택 단계 (판매점 정보를 위해 추가)
+elif st.session_state.stage == "question_4":
+    st.subheader("어느 지역에서 와인을 구매하실 계획인가요?")
+    
+    location_options = [
+        "서울",
+        "경기/인천",
+        "부산/경남",
+        "대구/경북",
+        "광주/전라",
+        "대전/충청",
+        "강원",
+        "제주",
+        "온라인 구매 예정",
+        "상관없음"
+    ]
+    
+    location_choice = st.radio("지역 선택", location_options, index=9)
+    st.session_state.wine_preferences["location"] = location_choice
+    
     if st.button("와인 추천 받기", key="get_recommendation"):
         # 시스템 메시지 추가
         system_prompt = (
@@ -101,19 +126,24 @@ elif st.session_state.stage == "question_3":
             "다음 정보를 기반으로 적합한 와인을 추천해주세요:\n"
             f"- 음식: {st.session_state.wine_preferences['food']}\n"
             f"- 선호하는 와인 스타일: {st.session_state.wine_preferences['style']}\n"
-            f"- 예산: {st.session_state.wine_preferences['budget']}\n\n"
-            "와인 이름, 가격대, 그리고 왜 추천하는지 간단히 설명해주세요. "
-            "또한 해당 와인과 어울리는 추가 음식이나 디저트도 제안해주세요."
+            f"- 예산: {st.session_state.wine_preferences['budget']}\n"
+            f"- 구매 지역: {st.session_state.wine_preferences['location']}\n\n"
+            "다음 형식으로 답변을 제공해주세요:\n"
+            "1. 추천 와인 이름과 가격\n"
+            "2. 와인 특징 및 추천 이유\n"
+            "3. 구매 가능한 판매점 정보 (백화점, 대형마트, 와인샵, 온라인몰 등 구체적인 장소 2-3곳 추천)\n"
+            "4. 해당 와인과 어울리는 추가 음식이나 디저트 추천\n\n"
+            "판매점은 사용자의 지역을 고려하여 추천해주세요. '상관없음'으로 선택했다면 대표적인 전국 체인점이나 온라인몰을 추천해주세요."
         )
         
         # 메시지 초기화 및 시스템 메시지 추가
         st.session_state.messages = []
         st.session_state.messages.append({"role": "system", "content": system_prompt})
-        st.session_state.messages.append({"role": "user", "content": f"음식: {st.session_state.wine_preferences['food']}, 와인 스타일: {st.session_state.wine_preferences['style']}, 예산: {st.session_state.wine_preferences['budget']}"})
+        st.session_state.messages.append({"role": "user", "content": f"음식: {st.session_state.wine_preferences['food']}, 와인 스타일: {st.session_state.wine_preferences['style']}, 예산: {st.session_state.wine_preferences['budget']}, 구매 지역: {st.session_state.wine_preferences['location']}"})
         
         # 추천 받기 단계로 이동
         st.session_state.stage = "recommendation"
-        st.rerun()  # experimental_rerun() -> rerun()으로 변경
+        st.rerun()
 
 # 추천 결과 단계
 elif st.session_state.stage == "recommendation":
@@ -124,6 +154,10 @@ elif st.session_state.stage == "recommendation":
     st.write(f"- 음식: {st.session_state.wine_preferences['food']}")
     st.write(f"- 와인 스타일: {st.session_state.wine_preferences['style']}")
     st.write(f"- 예산: {st.session_state.wine_preferences['budget']}")
+    st.write(f"- 구매 지역: {st.session_state.wine_preferences['location']}")
+    
+    # 구분선 추가
+    st.markdown("---")
     
     # OpenAI API를 사용하여 응답 생성
     try:
@@ -147,10 +181,26 @@ elif st.session_state.stage == "recommendation":
     except Exception as e:
         st.error(f"오류가 발생했습니다: {str(e)}")
     
-    # 다시 추천받기 버튼
-    if st.button("다른 와인 추천받기"):
-        st.session_state.stage = "question_1"
-        st.rerun()  # experimental_rerun() -> rerun()으로 변경
+    # 다시 추천받기 버튼과 처음부터 다시 시작하기 버튼 추가
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("다른 와인 추천받기"):
+            st.session_state.stage = "question_1"
+            st.rerun()
+    with col2:
+        if st.button("처음부터 다시 시작하기"):
+            # 세션 상태 초기화 (API 키 제외)
+            api_key = st.session_state.openai_api_key
+            st.session_state.messages = []
+            st.session_state.wine_preferences = {
+                "food": "",
+                "style": "",
+                "budget": "",
+                "location": ""
+            }
+            st.session_state.stage = "api_key"
+            st.session_state.openai_api_key = api_key
+            st.rerun()
 
 # 이전 대화 내용 표시 (recommendation 단계가 아닐 때만)
 if st.session_state.stage != "recommendation":
