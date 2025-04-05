@@ -27,7 +27,7 @@ if st.session_state.stage == "api_key":
     else:
         st.session_state.openai_api_key = openai_api_key
         st.session_state.stage = "question_1"
-        st.experimental_rerun()
+        st.rerun()  # experimental_rerun() -> rerun()으로 변경
 
 # 음식 선택 단계
 elif st.session_state.stage == "question_1":
@@ -55,7 +55,7 @@ elif st.session_state.stage == "question_1":
     
     if st.button("다음 단계로", key="next_1"):
         st.session_state.stage = "question_2"
-        st.experimental_rerun()
+        st.rerun()  # experimental_rerun() -> rerun()으로 변경
 
 # 와인 스타일 선택 단계
 elif st.session_state.stage == "question_2":
@@ -77,7 +77,7 @@ elif st.session_state.stage == "question_2":
     
     if st.button("다음 단계로", key="next_2"):
         st.session_state.stage = "question_3"
-        st.rerun()
+        st.rerun()  # experimental_rerun() -> rerun()으로 변경
 
 # 예산 선택 단계
 elif st.session_state.stage == "question_3":
@@ -113,7 +113,7 @@ elif st.session_state.stage == "question_3":
         
         # 추천 받기 단계로 이동
         st.session_state.stage = "recommendation"
-        st.experimental_rerun()
+        st.rerun()  # experimental_rerun() -> rerun()으로 변경
 
 # 추천 결과 단계
 elif st.session_state.stage == "recommendation":
@@ -150,10 +150,11 @@ elif st.session_state.stage == "recommendation":
     # 다시 추천받기 버튼
     if st.button("다른 와인 추천받기"):
         st.session_state.stage = "question_1"
-        st.experimental_rerun()
+        st.rerun()  # experimental_rerun() -> rerun()으로 변경
 
-# 이전 대화 내용 표시
-for message in st.session_state.messages:
-    if message["role"] != "system":  # 시스템 메시지는 표시하지 않음
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# 이전 대화 내용 표시 (recommendation 단계가 아닐 때만)
+if st.session_state.stage != "recommendation":
+    for message in st.session_state.messages:
+        if message["role"] != "system":  # 시스템 메시지는 표시하지 않음
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
