@@ -77,7 +77,7 @@ elif st.session_state.stage == "question_2":
     
     if st.button("다음 단계로", key="next_2"):
         st.session_state.stage = "question_3"
-        st.experimental_rerun()
+        st.rerun()
 
 # 예산 선택 단계
 elif st.session_state.stage == "question_3":
